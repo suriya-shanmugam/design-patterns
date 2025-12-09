@@ -301,3 +301,129 @@ Decorators in Python are:
 They are one of Python’s most powerful and idiomatic features.
 
 ---
+#  First: What Is a Closure?
+
+A **closure** in Python is created when:
+
+1. A function (inner function) is defined inside another function.
+2. The inner function *uses variables* from the outer function.
+3. The outer function returns the inner function.
+4. The inner function *remembers* the variables even after the outer function has finished executing.
+
+In simple terms:
+
+> **A closure is a function that carries (“closes over”) the environment in which it was created.**
+
+---
+
+#  Now look at *your code*:
+
+```python
+def decorator(func):
+    
+    def wrapper(*args):
+        print("I am a wrapper")
+        print(*args)
+        return func(*args)
+    
+    return wrapper
+```
+
+When you call:
+
+```python
+f1 = decorator(function1)
+```
+
+The steps are:
+
+1. `decorator()` receives `func=function1`.
+2. It **defines** the inner function `wrapper`, which *uses `func`*.
+3. `decorator()` returns `wrapper`.
+4. `wrapper` still remembers the value of `func` (which is `function1`).
+
+So `wrapper` is a closure because it **remembers `func`**, even though `decorator()` has already exited.
+
+---
+
+#  Why is this a closure?
+
+Let’s analyze your inner function:
+
+```python
+def wrapper(*args):
+    print("I am a wrapper")
+    print(*args)
+    return func(*args)   # <-- this is the key!
+```
+
+Inside `wrapper`, you are using the variable `func`.
+
+But `func`:
+
+* is **not a local variable** inside `wrapper`.
+* is **not a global variable**.
+
+It comes from the **enclosing function** `decorator`.
+
+Therefore Python marks `wrapper` as a **closure**—a function that “closes over” the variable `func`.
+
+And even after `decorator()` returns, Python keeps `func` alive so that `wrapper` can still call it.
+
+---
+
+#  Visualizing the Closure (Memory Model)
+
+When `f1 = decorator(function1)` runs, Python makes this structure:
+
+```
+decorator frame (ends)
+│
+│  func → function1
+│
+└── wrapper (closure)
+       |
+       └── has a pointer to func stored in its __closure__
+```
+
+Later, when you call:
+
+```python
+f1(1, 2)
+```
+
+Even though `decorator()` is long gone, `wrapper` can still access `func` because it's preserved inside the closure.
+
+---
+
+# 🧪 Proof that it is a closure
+
+You can test it:
+
+```python
+print(f1.__closure__)
+```
+
+You’ll see something like:
+
+```
+(<cell at 0x...: function object at 0x...>,)
+```
+
+This is Python showing you that `wrapper` *contains a “cell” storing `func`*.
+
+---
+
+#  Summary (easy to memorize)
+
+| Condition for closure                   | In your code                |
+| --------------------------------------- | --------------------------- |
+| Inner function                          | `wrapper`                   |
+| Uses outer variable                     | `func` inside `wrapper`     |
+| Outer function returns inner function   | `return wrapper`            |
+| Inner function remembers outer variable | `f1 = decorator(function1)` |
+
+Therefore:
+**`wrapper` is a closure because it captures (`closes over`) the variable `func` from the outer function.**
+
+---
