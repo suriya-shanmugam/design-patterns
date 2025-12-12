@@ -124,3 +124,96 @@ station.set_temperature(30)
   * **Push vs Pull:** The data is pushed to the consumer the moment it is available, rather than the consumer checking constantly.
 
 -----
+
+## Pull Variant
+In the **pull model**, the Subject notifies observers that “something changed,”
+but **does not push the actual data**.
+Observers then *pull* whatever data they need from the subject.
+
+---
+
+# Pull Variant Example
+
+## 1. Observer Interface
+
+Observers now expect the **subject** in the `update()` call.
+
+```python
+from abc import ABC, abstractmethod
+
+class Observer(ABC):
+    @abstractmethod
+    def update(self, subject):
+        pass
+```
+
+---
+
+## 2. Subject (Publisher)
+
+The only difference is `_notify()` now passes **self**.
+
+```python
+class WeatherStation:
+    def __init__(self):
+        self._observers = []
+        self._temperature = 0
+
+    def attach(self, observer: Observer):
+        self._observers.append(observer)
+
+    def detach(self, observer: Observer):
+        if observer in self._observers:
+            self._observers.remove(observer)
+
+    def set_temperature(self, temp):
+        self._temperature = temp
+        print(f"\nSubject: Temperature updated to {temp}C")
+        self._notify()
+
+    def get_temperature(self):
+        return self._temperature
+
+    def _notify(self):
+        print("Subject: Notifying observers...")
+        for observer in self._observers:
+            observer.update(self)  # Send subject reference
+```
+
+---
+
+## 3. Concrete Observers
+
+Each observer decides what data to pull from the subject.
+
+```python
+class PhoneDisplay(Observer):
+    def update(self, subject):
+        print(f"  -> Phone Display: Temp is {subject.get_temperature()}C")
+
+class WindowDisplay(Observer):
+    def update(self, subject):
+        temp = subject.get_temperature()
+        print(f"  -> Window Display: Reacting to {temp}C")
+```
+
+---
+
+## 4. Client Code
+
+```python
+station = WeatherStation()
+
+phone = PhoneDisplay()
+window = WindowDisplay()
+
+station.attach(phone)
+station.attach(window)
+
+station.set_temperature(25)
+
+station.detach(phone)
+station.set_temperature(30)
+```
+
+---
